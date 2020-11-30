@@ -1,0 +1,5 @@
+env
+.vscode
+.idea
+desktop.ini
+__pycache__
