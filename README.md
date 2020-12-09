@@ -3,7 +3,8 @@ Python virtual environment manager
 Creates/modifies a virtual environment with the main packages needed to perform numerical operations, data manipulation, signal processing, and plotting. Also installs the IPython kernel so the environment can be used in Interactive mode in VSCode with the variable explorer etc. 
 
 Author: Jack Mehmet
-Date: 2020-11-30
+Date: 2020-12-09
+Version: 1.1
 
 ## Command line options
 

@@ -1,26 +1,41 @@
-from datetime import datetime
 from itertools import repeat
-from os.path import basename, getsize
+from os.path import getsize
 from pathlib import Path
 from subprocess import call
 from sys import argv
 
-VERSION = "1.0"
 ENV_PATH = Path("./env")
 SCRIPTS_PATH = ENV_PATH / "Scripts"
 PYTHON_PATH = SCRIPTS_PATH / "python.exe"
 PIP_PATH = SCRIPTS_PATH / "pip.exe"
+
+MAIN_PACKAGES, MAIN_LABELS = zip(
+    ("wheel", "common package installation format"),
+    ("flake8", "static code analysis, Python 3.8 supported"),
+    ("rope", "code refactoring"),
+)
+
+SCIENCE_PACKAGES, SCIENCE_LABELS = zip(
+    ("numpy", "numerical processing + C-style arrays -> numpy.array()"),
+    ("pandas", "data manipulation + CSV file support -> pandas.read_csv()"),
+    ("xlrd", "Excel file support -> pandas.read_excel()"),
+    ("scipy", "signal processing + MAT file support -> scipy.io.loadmat()"),
+    ("matplotlib", "plotting -> matplotlib.pyplot"),
+    ("nptdms", "TDMS file support -> nptdms.TdmsFile()"),
+    ("ipykernel", "IPython, variable explorer"),
+    ("debugpy", "IPython debugging"),
+)
 
 
 def paragraph(s = "", *args, **kwargs):
     return print("\n" + s, *args, **kwargs)
 
 
-def pip_install(name: str, label: str = None):
+def pip_install(names: str, label: str = None):
     if label:
-        print(f"{name} ({label})")
+        print(f"{names} ({label})")
 
-    call(f"{PIP_PATH} install --upgrade --quiet {name}".split()) 
+    call(f"{PIP_PATH} install --upgrade --quiet {names}".split()) 
     
 
 def upgrade():
@@ -35,18 +50,14 @@ def create():
     upgrade()
 
     paragraph("Installing main packages...")
-    pip_install("wheel", "packages")
-    pip_install("pylint", "static code analysis")
-    pip_install("rope", "refactoring")
+    for package, label in zip(MAIN_PACKAGES, MAIN_LABELS):
+        pip_install(package, label)
 
 
 def science():
     paragraph("Installing scientific packages...")
-    pip_install("ipykernel", "variable explorer")
-    pip_install("numpy", "fast arrays")
-    pip_install("pandas", "data manipulation")
-    pip_install("scipy", "signal processing")
-    pip_install("matplotlib", "plotting")
+    for package, label in zip(SCIENCE_PACKAGES, SCIENCE_LABELS):
+        pip_install(package, label)
 
 
 def install():
@@ -63,7 +74,7 @@ if __name__ == "__main__":
         with open("README.md") as readme_f:
             print(readme_f.read().replace("\n```", ""))
     else:
-        paragraph(f"Python virtual environment manager, v{VERSION}")
+        paragraph(f"Python virtual environment manager")
 
         if len(argv) == 1:
             paragraph("Running all operations")
@@ -83,7 +94,8 @@ if __name__ == "__main__":
             if any(x in argv for x in "-i --install".split()):
                 install()
         
+        paragraph("Calculating size...")
         total_size_B = sum(map(getsize, ENV_PATH.glob("**/*.*")))
-        paragraph(f"{total_size_B / 2**20:.1f} MiB in {ENV_PATH}")
+        print(f"{total_size_B / 2**20:.1f} MiB in {ENV_PATH}")
     
     input("Press Enter to finish")
