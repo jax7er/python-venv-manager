@@ -1,3 +1,4 @@
+from argparse import ArgumentParser, RawTextHelpFormatter
 from datetime import datetime
 from itertools import repeat
 from os.path import basename, getsize
@@ -5,11 +6,69 @@ from pathlib import Path
 from subprocess import call
 from sys import argv
 
+DESCRIPTION = "Python virtual environment manager"
 VERSION = "1.0"
+
 ENV_PATH = Path("./env")
 SCRIPTS_PATH = ENV_PATH / "Scripts"
 PYTHON_PATH = SCRIPTS_PATH / "python.exe"
 PIP_PATH = SCRIPTS_PATH / "pip.exe"
+
+MAIN_NAMES, MAIN_LABELS = zip(
+    ("wheel", "packages"),
+    ("pylint", "static code analysis"),
+    ("rope", "refactoring"),
+)
+
+SCIENCE_NAMES, SCIENCE_LABELS = zip(
+    ("ipykernel", "interactive, variable explorer"),
+    ("debugpy", "IPython debugging"),
+    ("numpy", "fast arrays"),
+    ("pandas", "data manipulation"),
+    ("scipy", "signal processing"),
+    ("matplotlib", "plotting"),
+    ("nptdms", "TDMS file support"),
+    ("attrs", "data class support"),
+)
+
+
+def parse_arguments():
+    main_str = "\n\t".join(
+        sorted(map(": ".join, zip(MAIN_NAMES, MAIN_LABELS)))
+    )
+    sci_str = "\n\t".join(
+        sorted(map(": ".join, zip(SCIENCE_NAMES, SCIENCE_LABELS)))
+    )
+    parser = ArgumentParser(
+        description=DESCRIPTION + ", no options is the same as all options",
+        epilog=(
+            f"main installs:\n\t{main_str}\n"
+            f"--science installs:\n\t{sci_str}"
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+    parser.add_argument(
+        "-c", "--create", 
+        action="store_true", dest="create", 
+        help="Create new environment, upgrade pip, and install main packages"
+    )
+    parser.add_argument(
+        "-u", "--upgrade", 
+        action="store_true", dest="upgrade", 
+        help="Upgrade pip"
+    )
+    parser.add_argument(
+        "-s", "--science", 
+        action="store_true", dest="science", 
+        help="Install scientific packages"
+    )
+    parser.add_argument(
+        "-i", "--install", 
+        action="store_true", dest="install", 
+        help="Install custom packages"
+    )
+    
+    return parser.parse_args()
 
 
 def paragraph(s = "", *args, **kwargs):
@@ -35,22 +94,18 @@ def create():
     upgrade()
 
     paragraph("Installing main packages...")
-    pip_install("wheel", "packages")
-    pip_install("pylint", "static code analysis")
-    pip_install("rope", "refactoring")
+    for name, label in zip(MAIN_NAMES, MAIN_LABELS):
+        pip_install(name, label)
 
 
 def science():
     paragraph("Installing scientific packages...")
-    pip_install("ipykernel", "variable explorer")
-    pip_install("numpy", "fast arrays")
-    pip_install("pandas", "data manipulation")
-    pip_install("scipy", "signal processing")
-    pip_install("matplotlib", "plotting")
+    for name, label in zip(SCIENCE_NAMES, SCIENCE_LABELS):
+        pip_install(name, label)
 
 
 def install():
-    paragraph("Install custom packages, enter no name to skip")
+    paragraph("Install custom packages, enter no name to finish")
     for names in (input(x).strip() for x in repeat("Package name(s): ")):
         if names:
             pip_install(names, "custom")
@@ -59,31 +114,35 @@ def install():
 
 
 if __name__ == "__main__":
-    if any(x in argv for x in "-h --help".split()):
-        with open("README.md") as readme_f:
-            print(readme_f.read().replace("\n```", ""))
-    else:
-        paragraph(f"Python virtual environment manager, v{VERSION}")
+    args = parse_arguments()
 
-        if len(argv) == 1:
-            paragraph("Running all operations")
+    paragraph(f"{DESCRIPTION}, v{VERSION}")
+
+    if not any(vars(args).values()):
+        paragraph("Running all operations")
+        create()  # also executes upgrade()
+        science()
+        install()
+    else:
+        if args.create:
+            if (
+                not ENV_PATH.exists()
+                or input(f"{ENV_PATH} already exists, overwrite? [y|N] ").strip().lower().startswith("y")
+            ):
+                create()
+        elif not ENV_PATH.exists():
             create()
+
+        if args.upgrade:
+            upgrade()
+
+        if args.science:
             science()
+
+        if args.install:
             install()
-        else:
-            if any(x in argv for x in "-c --create".split()):
-                create()  
-            
-            if any(x in argv for x in "-u --upgrade".split()):
-                upgrade()
-            
-            if any(x in argv for x in "-s --science".split()):
-                science()      
-            
-            if any(x in argv for x in "-i --install".split()):
-                install()
-        
-        total_size_B = sum(map(getsize, ENV_PATH.glob("**/*.*")))
-        paragraph(f"{total_size_B / 2**20:.1f} MiB in {ENV_PATH}")
+    
+    total_size_B = sum(map(getsize, ENV_PATH.glob("**/*.*")))
+    paragraph(f"{total_size_B / 2**20:.1f} MiB in {ENV_PATH}")
     
     input("Press Enter to finish")
