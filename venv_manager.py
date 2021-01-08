@@ -1,7 +1,7 @@
 from argparse import ArgumentParser, RawTextHelpFormatter
 from datetime import datetime
 from itertools import repeat
-from os.path import basename, getsize
+from os.path import getsize
 from pathlib import Path
 from subprocess import call
 from sys import argv
@@ -75,11 +75,11 @@ def paragraph(s = "", *args, **kwargs):
     return print("\n" + s, *args, **kwargs)
 
 
-def pip_install(name: str, label: str = None):
+def pip_install(names: str, label: str = None):
     if label:
-        print(f"{name} ({label})")
+        print(f"{names} ({label})")
 
-    call(f"{PIP_PATH} install --upgrade --quiet {name}".split()) 
+    call(f"{PIP_PATH} install --upgrade --quiet {names}".split()) 
     
 
 def upgrade():
